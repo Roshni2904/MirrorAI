@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MirrorAI | Smart Mirror Portal</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="auth-screen" class="auth-screen">
+    <div class="auth-intro">
+      <div class="eyebrow">SMART LIVING · SMART TECHNOLOGY</div>
+      <h1>Your world,<br><span>in one mirror.</span></h1>
+      <p>Connect with your AI-powered smart mirror. Manage your profile, daily schedule, weather and conversations from one place.</p>
+      <div class="mirror-art">
+        <div class="mirror-glow">🪞</div>
+        <h2>Welcome to MirrorAI</h2>
+        <p>Your personal intelligent assistant</p>
+        <div class="chips"><span>AI Assistant</span><span>IoT Connected</span></div>
+      </div>
+    </div>
+    <div class="auth-card">
+      <div class="brand"><span class="brand-icon">🪞</span><h2>Mirror<span>AI</span></h2><p>Your personal smart mirror portal</p></div>
+      <div class="tabs">
+        <button id="login-tab" class="tab active">Login</button>
+        <button id="register-tab" class="tab">Register</button>
+      </div>
+      <form id="login-form">
+        <label>Email address<input id="login-email" type="email" placeholder="Enter your email" required></label>
+        <label>Password<input id="login-password" type="password" placeholder="Enter your password" required></label>
+        <button class="primary full" type="submit">Login to Dashboard →</button>
+        <p class="form-note">New here? <button type="button" class="link-button" id="go-register">Create an account</button></p>
+      </form>
+      <form id="register-form" class="hidden">
+        <label>Full name<input id="register-name" type="text" placeholder="Your full name" required></label>
+        <label>Email address<input id="register-email" type="email" placeholder="Your email" required></label>
+        <label>Password<input id="register-password" type="password" minlength="6" placeholder="Create a password" required></label>
+        <label>Confirm password<input id="register-confirm" type="password" placeholder="Confirm password" required></label>
+        <button class="primary full" type="submit">Create Account →</button>
+      </form>
+      <p id="auth-message" class="message" aria-live="polite"></p>
+      <p class="security-note">Student project prototype · Demo authentication</p>
+    </div>
+  </div>
+
+  <div id="app" class="app hidden">
+    <header class="topbar">
+      <div class="brand-small"><span>🪞</span> Mirror<span>AI</span></div>
+      <div class="top-actions"><span id="top-user"></span><button id="logout-btn" class="outline-btn">Logout ↗</button></div>
+    </header>
+    <div class="layout">
+      <aside class="sidebar">
+        <p class="side-label">MAIN MENU</p>
+        <button class="nav-link active" data-page="dashboard">⌂ <span>Dashboard</span></button>
+        <button class="nav-link" data-page="profile">♙ <span>My Profile</span></button>
+        <button class="nav-link" data-page="schedule">▦ <span>My Schedule</span></button>
+        <button class="nav-link" data-page="weather">☀ <span>Weather</span></button>
+        <button class="nav-link" data-page="assistant">✧ <span>Ask AI Assistant</span></button>
+        <button class="nav-link" data-page="history">◷ <span>Mirror History</span></button>
+        <button class="nav-link" data-page="reminders">🔔 <span>Reminders</span></button>
+        <button class="nav-link" data-page="settings">⚙ <span>Settings</span></button>
+        <button class="nav-link" data-page="camera">📷 <span>Live Camera</span></button>
+        <button class="nav-link" data-page="photos">▧ <span>My Photos</span></button>
+        <div class="device-card"><small>DEVICE STATUS</small><b>🪞 Smart Mirror</b><span>Demo mode · Not connected</span><i>Prototype</i></div>
+      </aside>
+
+      <main class="main-content">
+        <section class="page active" id="page-dashboard">
+          <div class="page-heading"><div><small>YOUR PERSONAL SPACE</small><h1>Welcome, <span id="welcome-name">User</span> 👋</h1><p>Here is your smart mirror overview.</p></div><span id="today-date" class="date-pill"></span></div>
+          <div class="stats-grid">
+            <article class="stat-card"><small>MY SCHEDULE</small><strong id="event-count">0</strong><span>Saved events</span></article>
+            <article class="stat-card"><small>AI CONVERSATIONS</small><strong id="chat-count">0</strong><span>Questions asked</span></article>
+            <article class="stat-card"><small>MIRROR ACTIVITY</small><strong id="history-count">0</strong><span>History entries</span></article>
+            <article class="stat-card"><small>ACCOUNT</small><strong>✓</strong><span>Profile created</span></article>
+          </div>
+          <div class="two-col">
+            <article class="panel weather-preview"><div class="panel-title"><h3>☀ Weather Overview</h3><button class="text-button" data-goto="weather">View details →</button></div><div class="weather-main"><span>🌤️</span><div><strong>--°C</strong><p>Live weather not connected</p><small>Nagpur, Maharashtra</small></div></div></article>
+            <article class="panel"><div class="panel-title"><h3>📅 Upcoming Schedule</h3><button class="text-button" data-goto="schedule">Manage →</button></div><div id="upcoming-events" class="muted">No events added yet.</div></article>
+          </div>
+          <article class="panel assistant-promo"><h3>✧ Talk to your AI assistant</h3><p>Ask questions, get information and interact with your smart mirror.</p><div class="quick-actions"><button class="outline-btn quick-ask" data-question="Help me plan my day">Plan my day</button><button class="outline-btn quick-ask" data-question="Give me a motivational quote">Motivation</button><button class="outline-btn" data-goto="assistant">Open AI Assistant →</button></div></article>
+        </section>
+
+        <section class="page" id="page-profile">
+          <div class="page-heading"><div><small>PERSONAL INFORMATION</small><h1>My Profile</h1><p>Update your personal details.</p></div></div>
+          <article class="panel form-panel">
+            <div class="avatar">👤</div><h2 id="profile-title" class="center">User</h2><p class="muted center">Smart Mirror Member</p>
+            <form id="profile-form" class="form-grid">
+              <label>Full name<input id="profile-name" required></label>
+              <label>Email address<input id="profile-email" type="email" disabled></label>
+              <label>Phone number<input id="profile-phone" placeholder="Enter phone number"></label>
+              <label>Date of birth<input id="profile-dob" type="date"></label>
+              <label class="span-two">About me<textarea id="profile-about" rows="3" placeholder="Tell us about yourself"></textarea></label>
+              <button class="primary span-two" type="submit">Save Profile</button>
+            </form>
+            <p id="profile-message" class="message"></p>
+          </article>
+        </section>
+
+        <section class="page" id="page-schedule">
+          <div class="page-heading"><div><small>PLAN YOUR DAY</small><h1>My Schedule 📅</h1><p>Add and manage your reminders and events.</p></div></div>
+          <article class="panel form-panel">
+            <h3>＋ Add New Event</h3>
+            <form id="event-form" class="form-grid">
+              <label class="span-two">Event title<input id="event-title" placeholder="e.g. College, Meeting, Study" required></label>
+              <label>Date<input id="event-date" type="date" required></label>
+              <label>Time<input id="event-time" type="time" required></label>
+              <label class="span-two">Description<input id="event-description" placeholder="Optional details"></label>
+              <button class="primary span-two" type="submit">Add to Schedule +</button>
+            </form>
+          </article>
+          <article class="panel list-panel"><h3>Your Events</h3><div id="event-list" class="list-stack muted">No events yet. Add your first event above.</div></article>
+        </section>
+
+        <section class="page" id="page-weather">
+          <div class="page-heading"><div><small>LIVE INFORMATION</small><h1>Weather Dashboard ☀</h1><p>Local weather information.</p></div></div>
+          <article class="panel weather-panel">
+            <div class="weather-location"><div><h2>Nagpur, Maharashtra</h2><p>Selected weather location</p></div><span class="status-pill">Weather module</span></div>
+            <div class="weather-main large"><span>🌤️</span><div><strong>--°C</strong><p>Live data not connected</p></div></div>
+            <div class="weather-metrics"><div><small>HUMIDITY</small><b>--%</b></div><div><small>WIND</small><b>-- km/h</b></div><div><small>FORECAST</small><b>--</b></div></div>
+            <p class="help-text">A weather API is required to display real-time conditions and forecasts.</p>
+          </article>
+        </section>
+
+        <section class="page" id="page-assistant">
+          <div class="page-heading"><div><small>YOUR PERSONAL AI</small><h1>Ask AI Assistant ✧</h1><p>Chat with your smart mirror assistant.</p></div></div>
+          <article class="panel chat-panel">
+            <div class="chat-header"><div><b>🪞 Jinnie – Mirror Assistant</b><small>Personal assistant · Demo mode</small></div><span class="status-pill">Demo online</span></div>
+            <div id="chat-messages" class="chat-messages"><div class="bubble bot">Hello! 👋 I'm your smart mirror assistant. Ask me about your schedule, study tips, AI or the website. How can I help?</div></div>
+            <div class="quick-actions chat-suggestions"><button class="outline-btn quick-ask" data-question="Give me a motivational quote">Motivation</button><button class="outline-btn quick-ask" data-question="What is artificial intelligence?">Ask about AI</button></div>
+            <form id="chat-form" class="chat-form"><input id="chat-input" placeholder="Ask me anything..." required autocomplete="off"><button class="primary" type="submit">Send ➤</button></form>
+          </article>
+          <p class="help-text">This demo uses sample responses. Connect an AI API for real AI-generated answers.</p>
+        </section>
+
+        <section class="page" id="page-history">
+          <div class="page-heading"><div><small>YOUR ACTIVITY</small><h1>Mirror History ◷</h1><p>Review your recent website and assistant activity.</p></div><button id="clear-history" class="outline-btn">Clear history</button></div>
+          <article class="panel list-panel"><div id="history-list" class="list-stack muted">No activity recorded yet.</div></article>
+        </section>
+        <section class="page" id="page-reminders">
+          <div class="page-heading"><div><small>NEVER MISS A TASK</small><h1>Reminders 🔔</h1><p>Create reminders for your daily activities.</p></div></div>
+          <article class="panel form-panel">
+            <h3>＋ Add a Reminder</h3>
+            <form id="reminder-form" class="form-grid">
+              <label class="span-two">Reminder title<input id="reminder-title" placeholder="e.g. Drink water, Complete assignment" required></label>
+              <label>Date<input id="reminder-date" type="date" required></label>
+              <label>Time<input id="reminder-time" type="time" required></label>
+              <button class="primary span-two" type="submit">Save Reminder</button>
+            </form>
+          </article>
+          <article class="panel list-panel"><h3>My Reminders</h3><div id="reminder-list" class="list-stack muted">No reminders added yet.</div></article>
+        </section>
+
+        <section class="page" id="page-settings">
+          <div class="page-heading"><div><small>PERSONALIZE YOUR PORTAL</small><h1>Settings ⚙</h1><p>Manage your website preferences.</p></div></div>
+          <article class="panel form-panel settings-panel">
+            <h3>Account Preferences</h3>
+            <label class="setting-row"><span><b>Welcome message</b><small>Show a greeting on your dashboard.</small></span><input id="setting-greeting" type="checkbox" checked></label>
+            <label class="setting-row"><span><b>Activity history</b><small>Save actions in Mirror History.</small></span><input id="setting-history" type="checkbox" checked></label>
+            <label class="setting-row"><span><b>Assistant sound</b><small>Speech setting placeholder for future integration.</small></span><input id="setting-sound" type="checkbox"></label>
+            <button id="save-settings" class="primary full" type="button">Save Settings</button>
+            <p class="help-text">Preferences are saved in this browser for this demo account.</p>
+          </article>
+        </section>
+
+        <section class="page" id="page-camera">
+          <div class="page-heading"><div><small>SMART MIRROR DEVICE</small><h1>Live Mirror Camera 📷</h1><p>Preview your computer or phone camera.</p></div></div>
+          <article class="panel camera-panel">
+            <video id="camera-video" autoplay playsinline muted></video>
+            <div class="quick-actions"><button id="camera-start" class="primary" type="button">Start Camera</button><button id="camera-stop" class="outline-btn" type="button">Stop Camera</button></div>
+            <p id="camera-status" class="help-text">Camera is off. Allow camera permission when your browser asks.</p>
+            <p class="help-text">This is a browser camera preview. Raspberry Pi camera integration requires a device connection and backend.</p>
+          </article>
+        </section>
+
+        <section class="page" id="page-photos">
+          <div class="page-heading"><div><small>YOUR MIRROR MOMENTS</small><h1>My Photos ▧</h1><p>Select photos to preview in this browser.</p></div></div>
+          <article class="panel">
+            <label class="upload-label">＋ Select Photos<input id="photo-upload" type="file" accept="image/*" multiple></label>
+            <p class="help-text">Selected photos are previewed here only. They are not uploaded to a server.</p>
+            <div id="photo-gallery" class="photo-gallery"><p class="muted">Your selected photos will appear here.</p></div>
+          </article>
+        </section>
+
+        <footer>MirrorAI · AI-Powered Smart Mirror Project · Web Prototype</footer>
+      </main>
+    </div>
+  </div>
+  <div id="toast" class="toast" role="status"></div>
+  <script src="script.js"></script>
+</body>
+</html>
