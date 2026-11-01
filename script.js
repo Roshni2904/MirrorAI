@@ -116,23 +116,92 @@ function sendMessage(question) {
 $("login-tab").addEventListener("click",()=>switchAuth("login"));
 $("register-tab").addEventListener("click",()=>switchAuth("register"));
 $("go-register").addEventListener("click",()=>switchAuth("register"));
-$("register-form").addEventListener("submit",e=>{
-  e.preventDefault();
-  const name=$("register-name").value.trim(), email=$("register-email").value.trim().toLowerCase();
-  const password=$("register-password").value;
-  if(password!==$("register-confirm").value){$("auth-message").textContent="Passwords do not match.";return;}
-  const all=readData();
-  if(all[email]){$("auth-message").textContent="This email is already registered in this browser.";return;}
-  const data={user:{name,email,password},events:[],historyItems:[],chatCount:0};
-  all[email]=data;localStorage.setItem(STORAGE_KEY,JSON.stringify(all));openApp(data);showToast("Account created successfully!");
+
+$("register-form").addEventListener("submit", async e => {
+    e.preventDefault();
+
+    const name = $("register-name").value.trim();
+    const email = $("register-email").value.trim().toLowerCase();
+    const password = $("register-password").value;
+
+    if (password !== $("register-confirm").value) {
+        $("auth-message").textContent = "Passwords do not match.";
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/users`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ name, email, password })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            $("auth-message").textContent = result.message;
+            return;
+        }
+
+        openApp({
+            user: result.user,
+            events: [],
+            historyItems: [],
+            chatCount: 0,
+            reminders: []
+        });
+
+        showToast("Account created successfully!");
+
+    } catch (error) {
+        $("auth-message").textContent =
+            "Cannot connect to server. Please try again.";
+        console.error(error);
+    }
 });
-$("login-form").addEventListener("submit",e=>{
-  e.preventDefault();
-  const email=$("login-email").value.trim().toLowerCase(),password=$("login-password").value;
-  const data=readData()[email];
-  if(!data||data.user.password!==password){$("auth-message").textContent="Account not found or incorrect password. Please register first.";return;}
-  openApp(data);
+
+
+$("login-form").addEventListener("submit", async e => {
+    e.preventDefault();
+
+    const email = $("login-email").value.trim().toLowerCase();
+    const password = $("login-password").value;
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/login`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ email, password })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            $("auth-message").textContent = result.message;
+            return;
+        }
+
+        openApp({
+            user: result.user,
+            events: [],
+            historyItems: [],
+            chatCount: 0,
+            reminders: []
+        });
+
+        showToast("Login successful!");
+
+    } catch (error) {
+        $("auth-message").textContent =
+            "Cannot connect to server. Please try again.";
+        console.error(error);
+    }
 });
+
 $("logout-btn").addEventListener("click",logout);
 document.querySelectorAll(".nav-link").forEach(b=>b.addEventListener("click",()=>navigate(b.dataset.page)));
 document.querySelectorAll("[data-goto]").forEach(b=>b.addEventListener("click",()=>navigate(b.dataset.goto)));
