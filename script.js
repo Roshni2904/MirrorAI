@@ -258,4 +258,4 @@ $("photo-upload").addEventListener("change",e=>{
   addHistory("Photos selected",`${files.length} photo(s) previewed`);
 }); 
 
-const API_BASE_URL = "http://localhost:5000";
+const API_BASE_URL = "https://smart-mirror-backend-vdrg.onrender.com";
