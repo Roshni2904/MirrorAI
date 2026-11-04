@@ -7,7 +7,10 @@ const bcrypt = require("bcryptjs");
 const User = require("./models/user");
 const Reminder = require("./models/reminder");
 const Schedule = require("./models/schedule");
+const auth = require("./middleware/auth");
 const app = express();
+const jwt = require("jsonwebtoken");
+const History = require("./models/history");
 
 app.use(cors());
 app.use(express.json());
@@ -43,6 +46,13 @@ app.post("/api/login", async (req, res) => {
             email: email.toLowerCase()
         });
 
+        console.log("Login email:", email.trim().toLowerCase());
+console.log("User found:", !!user);
+
+if (user) {
+    console.log("Password hash exists:", !!user.password);
+}
+
         if (!user) {
             return res.status(401).json({
                 message: "Invalid email or password"
@@ -60,14 +70,21 @@ app.post("/api/login", async (req, res) => {
             });
         }
 
-        res.status(200).json({
-            message: "Login successful",
-            user: {
-                id: user._id,
-                name: user.name,
-                email: user.email
-            }
-        });
+       const token = jwt.sign(
+    { id: user._id.toString() },
+    process.env.JWT_SECRET,
+    { expiresIn: "7d" }
+);
+
+res.status(200).json({
+    message: "Login successful",
+    token: token,
+    user: {
+        id: user._id,
+        name: user.name,
+        email: user.email
+    }
+});
 
     } catch (error) {
         console.error("Login Error:", error);
@@ -86,8 +103,10 @@ app.post("/api/users", async (req, res) => {
             });
         }
 
+        const normalizedEmail = email.trim().toLowerCase();
+
         const existingUser = await User.findOne({
-            email: email.toLowerCase()
+            email: normalizedEmail
         });
 
         if (existingUser) {
@@ -99,15 +118,22 @@ app.post("/api/users", async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         const newUser = new User({
-            name,
-            email: email.toLowerCase(),
+            name: name.trim(),
+            email: normalizedEmail,
             password: hashedPassword
         });
 
         await newUser.save();
 
+        const token = jwt.sign(
+            { id: newUser._id.toString() },
+            process.env.JWT_SECRET,
+            { expiresIn: "7d" }
+        );
+
         res.status(201).json({
             message: "Registration successful",
+            token,
             user: {
                 id: newUser._id,
                 name: newUser.name,
@@ -122,134 +148,255 @@ app.post("/api/users", async (req, res) => {
         });
     }
 });
-app.post("/api/reminders", async (req, res) => {
+
+// REMINDER APIs - USER WISE
+
+// Create Reminder
+app.post("/api/reminders", auth, async (req, res) => {
     try {
         const reminder = new Reminder({
+            userId: req.user.id,
             title: req.body.title,
             time: req.body.time,
             date: req.body.date
         });
 
         const savedReminder = await reminder.save();
-
         res.status(201).json(savedReminder);
+
     } catch (error) {
-        res.status(500).json({
-            message: error.message
-        });
+        res.status(500).json({ message: error.message });
     }
 });
-app.get("/api/reminders", async (req, res) => {
+
+// Get Logged-in User's Reminders
+app.get("/api/reminders", auth, async (req, res) => {
     try {
-        const reminders = await Reminder.find();
+        const reminders = await Reminder.find({
+            userId: req.user.id
+        });
 
         res.json(reminders);
+
     } catch (error) {
-        res.status(500).json({
-            message: error.message
-        });
+        res.status(500).json({ message: error.message });
     }
 });
-app.put("/api/reminders/:id", async (req, res) => {
+
+// Update Reminder
+app.put("/api/reminders/:id", auth, async (req, res) => {
     try {
-        const updatedReminder = await Reminder.findByIdAndUpdate(
-            req.params.id,
+        const updatedReminder = await Reminder.findOneAndUpdate(
+            {
+                _id: req.params.id,
+                userId: req.user.id
+            },
             {
                 title: req.body.title,
                 time: req.body.time,
                 date: req.body.date
             },
-            { new: true }
+            { new: true, runValidators: true }
         );
 
+        if (!updatedReminder) {
+            return res.status(404).json({
+                message: "Reminder not found"
+            });
+        }
+
         res.json(updatedReminder);
+
     } catch (error) {
-        res.status(500).json({
-            message: error.message
-        });
+        res.status(500).json({ message: error.message });
     }
 });
-app.delete("/api/reminders/:id", async (req, res) => {
+
+// Delete Reminder
+app.delete("/api/reminders/:id", auth, async (req, res) => {
     try {
-        const deletedReminder = await Reminder.findByIdAndDelete(
-            req.params.id
-        );
+        const deletedReminder = await Reminder.findOneAndDelete({
+            _id: req.params.id,
+            userId: req.user.id
+        });
+
+        if (!deletedReminder) {
+            return res.status(404).json({
+                message: "Reminder not found"
+            });
+        }
 
         res.json({
             message: "Reminder deleted successfully",
             reminder: deletedReminder
         });
+
     } catch (error) {
-        res.status(500).json({
-            message: error.message
-        });
+        res.status(500).json({ message: error.message });
     }
 });
-app.post("/api/schedules", async (req, res) => {
+
+
+// SCHEDULE APIs - USER WISE
+
+// Create Schedule
+app.post("/api/schedules", auth, async (req, res) => {
     try {
         const schedule = new Schedule({
+            userId: req.user.id,
             title: req.body.title,
             time: req.body.time,
             date: req.body.date
         });
 
         const savedSchedule = await schedule.save();
-
         res.status(201).json(savedSchedule);
+
     } catch (error) {
-        res.status(500).json({
-            message: error.message
-        });
+        res.status(500).json({ message: error.message });
     }
 });
-app.get("/api/schedules", async (req, res) => {
+
+// Get Logged-in User's Schedules
+app.get("/api/schedules", auth, async (req, res) => {
     try {
-        const schedules = await Schedule.find();
+        const schedules = await Schedule.find({
+            userId: req.user.id
+        });
 
         res.json(schedules);
+
     } catch (error) {
-        res.status(500).json({
-            message: error.message
-        });
+        res.status(500).json({ message: error.message });
     }
 });
-// Schedule PUT
-app.put("/api/schedules/:id", async (req, res) => {
+
+// Update Schedule
+app.put("/api/schedules/:id", auth, async (req, res) => {
     try {
-        const updatedSchedule = await Schedule.findByIdAndUpdate(
-            req.params.id,
+        const updatedSchedule = await Schedule.findOneAndUpdate(
+            {
+                _id: req.params.id,
+                userId: req.user.id
+            },
             {
                 title: req.body.title,
                 time: req.body.time,
                 date: req.body.date
             },
-            { new: true }
+            { new: true, runValidators: true }
         );
 
+        if (!updatedSchedule) {
+            return res.status(404).json({
+                message: "Schedule not found"
+            });
+        }
+
         res.json(updatedSchedule);
+
     } catch (error) {
-        res.status(500).json({
-            message: error.message
-        });
+        res.status(500).json({ message: error.message });
     }
 });
-// Schedule DELETE
-app.delete("/api/schedules/:id", async (req, res) => {
+
+// Delete Schedule
+app.delete("/api/schedules/:id", auth, async (req, res) => {
     try {
-        const deletedSchedule = await Schedule.findByIdAndDelete(
-            req.params.id
-        );
+        const deletedSchedule = await Schedule.findOneAndDelete({
+            _id: req.params.id,
+            userId: req.user.id
+        });
+
+        if (!deletedSchedule) {
+            return res.status(404).json({
+                message: "Schedule not found"
+            });
+        }
 
         res.json({
             message: "Schedule deleted successfully",
             schedule: deletedSchedule
         });
+
     } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// SAVE HISTORY
+app.post("/api/history", auth, async (req, res) => {
+    try {
+        const { type, detail, time } = req.body;
+
+        if (!type) {
+            return res.status(400).json({
+                message: "History type is required"
+            });
+        }
+
+        const history = new History({
+            userId: req.user.id,
+            type,
+            detail: detail || "",
+            time: time || ""
+        });
+
+        await history.save();
+
+        res.status(201).json({
+            message: "History saved successfully",
+            history
+        });
+
+    } catch (error) {
+        console.error("Save history error:", error);
         res.status(500).json({
-            message: error.message
+            message: "Could not save history"
         });
     }
 });
+
+
+// GET HISTORY
+app.get("/api/history", auth, async (req, res) => {
+    try {
+        const histories = await History.find({
+            userId: req.user.id
+        }).sort({ createdAt: -1 });
+
+        res.status(200).json({
+            history: histories
+        });
+
+    } catch (error) {
+        console.error("Get history error:", error);
+        res.status(500).json({
+            message: "Could not fetch history"
+        });
+    }
+});
+
+
+// DELETE HISTORY
+app.delete("/api/history", auth, async (req, res) => {
+    try {
+        await History.deleteMany({
+            userId: req.user.id
+        });
+
+        res.status(200).json({
+            message: "History deleted successfully"
+        });
+
+    } catch (error) {
+        console.error("Delete history error:", error);
+        res.status(500).json({
+            message: "Could not delete history"
+        });
+    }
+});
+
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
