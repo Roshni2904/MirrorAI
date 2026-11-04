@@ -780,9 +780,3 @@ $("photo-upload").addEventListener("change", e => {
   );
 });
 
-await apiRequest("/api/history", {
-    method: "POST",
-    body: JSON.stringify(item)
-});
-
-apiRequest("/api/history")
