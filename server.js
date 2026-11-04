@@ -397,6 +397,41 @@ app.delete("/api/history", auth, async (req, res) => {
     }
 });
 
+// LIVE WEATHER API
+app.get("/api/weather", async (req, res) => {
+    try {
+        const city = req.query.city || "Nagpur";
+
+        const apiKey = process.env.OPENWEATHER_API_KEY;
+
+        const response = await fetch(
+            `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}&units=metric`
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            return res.status(response.status).json({
+                message: data.message || "Weather API error"
+            });
+        }
+
+        res.json({
+            city: data.name,
+            temperature: data.main.temp,
+            condition: data.weather[0].description,
+            humidity: data.main.humidity,
+            windSpeed: data.wind.speed
+        });
+
+    } catch (error) {
+        console.error("Weather error:", error);
+        res.status(500).json({
+            message: "Unable to fetch weather"
+        });
+    }
+});
+
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
