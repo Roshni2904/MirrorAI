@@ -1,5 +1,5 @@
 const STORAGE_KEY = "mirrorAIProjectData";
-const API_BASE_URL = "https://smart-mirror-backend-vdrg.onrender.com";
+const API_BASE_URL = "https://smart-mirror-backend-vdrg-t4ti.onrender.com";
 
 let currentUser = null, events = [], historyItems = [], chatCount = 0, reminders = [], settings = { greeting: true, history: true, sound: false }, cameraStream = null, photoUrls = [];
 
