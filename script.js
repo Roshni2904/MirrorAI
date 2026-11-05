@@ -66,7 +66,7 @@ function startWeatherRefresh() {
         clearInterval(weatherRefreshTimer);
     }
 
-    weatherRefreshTimer = setInterval(loadWeather, 10 * 60 * 1000);
+    weatherRefreshTimer = setInterval(loadWeather, 60 * 1000);
 }
 
 let latestWeather = null;
