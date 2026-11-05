@@ -11,9 +11,52 @@ const auth = require("./middleware/auth");
 const app = express();
 const jwt = require("jsonwebtoken");
 const History = require("./models/history");
+const Photo = require("./models/photo");
+const cloudinary = require("cloudinary").v2;
+const multer = require("multer");
 
 app.use(cors());
 app.use(express.json());
+
+// CLOUDINARY CONFIGURATION
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+// PHOTO UPLOAD CONFIGURATION
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+        fileSize: 10 * 1024 * 1024
+    },
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype && file.mimetype.startsWith("image/")) {
+            cb(null, true);
+        } else {
+            cb(new Error("Only image files are allowed"));
+        }
+    }
+});
+
+// UPLOAD PHOTO TO CLOUDINARY
+function uploadToCloudinary(fileBuffer) {
+    return new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+            {
+                folder: "mirrorai_photos",
+                resource_type: "image"
+            },
+            (error, result) => {
+                if (error) reject(error);
+                else resolve(result);
+            }
+        );
+
+        stream.end(fileBuffer);
+    });
+}
 
 // MongoDB connection
 mongoose.connect(process.env.MONGO_URI)
@@ -393,6 +436,89 @@ app.delete("/api/history", auth, async (req, res) => {
         console.error("Delete history error:", error);
         res.status(500).json({
             message: "Could not delete history"
+        });
+    }
+});
+
+// ================= PHOTO APIs =================
+
+// UPLOAD PHOTO
+app.post("/api/photos", auth, upload.single("photo"), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({
+                message: "Please select a photo"
+            });
+        }
+
+        const result = await uploadToCloudinary(req.file.buffer);
+
+        const photo = await Photo.create({
+            userId: req.user.id,
+            imageUrl: result.secure_url,
+            publicId: result.public_id
+        });
+
+        res.status(201).json({
+            message: "Photo uploaded successfully",
+            photo
+        });
+
+    } catch (error) {
+        console.error("Photo Upload Error:", error);
+        res.status(500).json({
+            message: "Photo upload failed"
+        });
+    }
+});
+
+
+// GET USER PHOTOS
+app.get("/api/photos", auth, async (req, res) => {
+    try {
+        const photos = await Photo.find({
+            userId: req.user.id
+        }).sort({ createdAt: -1 });
+
+        res.json({ photos });
+
+    } catch (error) {
+        console.error("Fetch Photos Error:", error);
+        res.status(500).json({
+            message: "Unable to fetch photos"
+        });
+    }
+});
+
+
+// DELETE PHOTO
+app.delete("/api/photos/:id", auth, async (req, res) => {
+    try {
+        const photo = await Photo.findOne({
+            _id: req.params.id,
+            userId: req.user.id
+        });
+
+        if (!photo) {
+            return res.status(404).json({
+                message: "Photo not found"
+            });
+        }
+
+        await cloudinary.uploader.destroy(photo.publicId, {
+            resource_type: "image"
+        });
+
+        await Photo.deleteOne({ _id: photo._id });
+
+        res.json({
+            message: "Photo deleted successfully"
+        });
+
+    } catch (error) {
+        console.error("Delete Photo Error:", error);
+        res.status(500).json({
+            message: "Unable to delete photo"
         });
     }
 });

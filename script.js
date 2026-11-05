@@ -113,6 +113,76 @@ async function apiRequest(path, options = {}) {
   return result;
 }
 
+
+// UPLOAD PHOTO TO CLOUDINARY
+async function uploadPhoto(file) {
+    const token = localStorage.getItem("token");
+
+    const formData = new FormData();
+    formData.append("photo", file);
+
+    const response = await fetch(`${API_BASE_URL}/api/photos`, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${token}`
+        },
+        body: formData
+    });
+
+    const result = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+        throw new Error(result.message || "Photo upload failed");
+    }
+
+    return result.photo;
+}
+
+
+// LOAD SAVED PHOTOS FROM DATABASE
+async function loadPhotos() {
+    const gallery = $("photo-gallery");
+
+    try {
+        const result = await apiRequest("/api/photos");
+        const photos = result.photos || [];
+
+        gallery.innerHTML = "";
+
+        if (!photos.length) {
+            gallery.innerHTML =
+                '<p class="muted">No saved photos yet.</p>';
+            return;
+        }
+
+        photos.forEach(photo => {
+            const card = document.createElement("div");
+            card.className = "photo-card";
+
+            const img = document.createElement("img");
+            img.src = photo.imageUrl;
+            img.alt = "Saved photo";
+            img.loading = "lazy";
+
+            const deleteButton = document.createElement("button");
+            deleteButton.type = "button";
+            deleteButton.className = "delete-btn";
+            deleteButton.textContent = "Delete";
+            deleteButton.dataset.photoDelete = photo._id;
+
+            card.appendChild(img);
+            card.appendChild(deleteButton);
+            gallery.appendChild(card);
+        });
+
+    } catch (error) {
+        console.error("Photo loading error:", error);
+        gallery.innerHTML =
+            '<p class="muted">Could not load saved photos.</p>';
+    }
+}
+
+
 function getRecord(result, key) {
   return result?.[key] || result?.data || result;
 }
@@ -260,6 +330,7 @@ function navigate(page) {
     b => b.classList.toggle("active", b.dataset.page === page)
   );
 
+  if (page === "photos") loadPhotos();
   if (page === "profile") renderProfile();
   if (page === "dashboard") renderAll();
   if (page === "reminders") renderReminders();
@@ -854,7 +925,8 @@ $("camera-start").addEventListener("click", startCamera);
 
 $("camera-stop").addEventListener("click", stopCamera);
 
-$("capture-photo").addEventListener("click", () => {
+
+$("capture-photo").addEventListener("click", async () => {
     if (!cameraStream || !cameraStream.active) {
         showToast("Please start the camera first.");
         return;
@@ -868,70 +940,103 @@ $("capture-photo").addEventListener("click", () => {
     }
 
     const canvas = document.createElement("canvas");
-
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
 
     const context = canvas.getContext("2d");
-
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    canvas.toBlob(blob => {
+    canvas.toBlob(async blob => {
         if (!blob) {
             showToast("Could not capture photo.");
             return;
         }
 
-        const photoURL = URL.createObjectURL(blob);
+        try {
+            const file = new File(
+                [blob],
+                `mirrorai-${Date.now()}.jpg`,
+                { type: "image/jpeg" }
+            );
 
-        const img = document.createElement("img");
-        img.src = photoURL;
-        img.alt = "Captured photo";
+            await uploadPhoto(file);
 
-        $("photo-gallery").appendChild(img);
+            await loadPhotos();
 
-        navigate("photos");
+            addHistory(
+                "Photo captured",
+                "Photo captured and saved permanently"
+            );
 
-        addHistory("Photo captured", "A photo was taken using the camera");
+            navigate("photos");
+            showToast("Photo saved successfully!");
 
-        showToast("Photo captured successfully!");
+        } catch (error) {
+            console.error(error);
+            showToast(error.message || "Photo upload failed");
+        }
     }, "image/jpeg", 0.9);
 });
 
+
 // PHOTO GALLERY
 
-$("photo-upload").addEventListener("change", e => {
-  const gallery = $("photo-gallery");
 
-  photoUrls.forEach(url => URL.revokeObjectURL(url));
-  photoUrls = [];
+$("photo-upload").addEventListener("change", async e => {
+    const files = [...e.target.files].filter(
+        file => file.type.startsWith("image/")
+    );
 
-  const files = [...e.target.files].filter(
-    file => file.type.startsWith("image/")
-  );
+    if (!files.length) return;
 
-  if (!files.length) {
-    gallery.innerHTML = '<p class="muted">No photos selected.</p>';
-    return;
-  }
+    try {
+        for (const file of files) {
+            await uploadPhoto(file);
+        }
 
-  gallery.innerHTML = "";
+        await loadPhotos();
 
-  files.forEach(file => {
-    const url = URL.createObjectURL(file);
-    photoUrls.push(url);
+        await addHistory(
+            "Photos uploaded",
+            `${files.length} photo(s) saved permanently`
+        );
 
-    const img = document.createElement("img");
-    img.src = url;
-    img.alt = file.name;
-    img.title = file.name;
+        showToast("Photos saved successfully!");
 
-    gallery.appendChild(img);
-  });
+    } catch (error) {
+        console.error("Photo upload error:", error);
+        showToast(error.message || "Could not upload photos");
 
-  addHistory(
-    "Photos selected",
-    `${files.length} photo(s) previewed`
-  );
+    } finally {
+        e.target.value = "";
+    }
 });
 
+
+// DELETE SAVED PHOTO
+$("photo-gallery").addEventListener("click", async e => {
+    const button = e.target.closest("[data-photo-delete]");
+
+    if (!button) return;
+
+    const id = button.dataset.photoDelete;
+
+    try {
+        await apiRequest(`/api/photos/${encodeURIComponent(id)}`, {
+            method: "DELETE"
+        });
+
+        await loadPhotos();
+
+        await addHistory(
+            "Photo deleted",
+            "A saved photo was permanently deleted"
+        );
+
+        showToast("Photo deleted successfully!");
+
+    } catch (error) {
+        console.error(error);
+        showToast(error.message || "Could not delete photo");
+    }
+});
