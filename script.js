@@ -1,7 +1,76 @@
 const STORAGE_KEY = "mirrorAIProjectData";
 const API_BASE_URL = "https://smart-mirror-backend-vdrg-t4ti.onrender.com";
 
-let currentUser = null, events = [], historyItems = [], chatCount = 0, reminders = [], settings = { greeting: true, history: true, sound: false }, cameraStream = null, photoUrls = [];
+// LIVE WEATHER API
+async function loadWeather() {
+    try {
+        const response = await fetch(
+            `${API_BASE_URL}/api/weather?city=Nagpur`
+        );
+
+        if (!response.ok) {
+            throw new Error("Weather API failed");
+        }
+
+        const data = await response.json();
+        latestWeather = data;
+
+        let icon = "🌤️";
+        const condition = data.condition.toLowerCase();
+
+        if (condition.includes("rain")) icon = "🌧️";
+        else if (condition.includes("cloud")) icon = "☁️";
+        else if (condition.includes("clear")) icon = "☀️";
+        else if (condition.includes("haze") || condition.includes("mist")) icon = "🌫️";
+        else if (condition.includes("thunder")) icon = "⛈️";
+
+        function update(id, value) {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = value;
+            }
+        }
+
+        // Dashboard weather
+        update("dashboard-temperature", `${Math.round(data.temperature)}°C`);
+        update("dashboard-condition", data.condition);
+        update("dashboard-city", data.city);
+        update("dashboard-weather-icon", icon);
+
+        // Weather page
+        update("weather-temperature", `${Math.round(data.temperature)}°C`);
+        update("weather-condition", data.condition);
+        update("weather-city", data.city);
+        update("weather-icon", icon);
+        update("weather-humidity", `${data.humidity}%`);
+        update("weather-wind", `${(data.windSpeed * 3.6).toFixed(1)} km/h`);
+        update("weather-forecast", data.condition);
+        update("weather-updated", "Weather updated successfully");
+
+    } catch (error) {
+        console.error("Weather error:", error);
+
+        const condition = document.getElementById("weather-condition");
+        if (condition) condition.textContent = "Weather unavailable";
+
+        const dashboardCondition = document.getElementById("dashboard-condition");
+        if (dashboardCondition) dashboardCondition.textContent = "Weather unavailable";
+    }
+}
+
+// Automatically refresh weather every 10 minutes
+function startWeatherRefresh() {
+    loadWeather();
+
+    if (weatherRefreshTimer) {
+        clearInterval(weatherRefreshTimer);
+    }
+
+    weatherRefreshTimer = setInterval(loadWeather, 10 * 60 * 1000);
+}
+
+let latestWeather = null;
+let weatherRefreshTimer = null;
 
 const $ = (id) => document.getElementById(id);
 
@@ -136,6 +205,7 @@ function openApp(data) {
     history: true,
     sound: false,
     ...(saved[currentUser.email]?.settings || {})
+    startWeatherRefresh();
   };
 
   events = [];
@@ -165,6 +235,9 @@ function logout() {
 }
 
 function navigate(page) {
+  if (page === "weather") {
+    loadWeather();
+}
   document.querySelectorAll(".page").forEach(
     p => p.classList.remove("active")
   );
@@ -179,6 +252,7 @@ function navigate(page) {
   if (page === "dashboard") renderAll();
   if (page === "reminders") renderReminders();
   if (page === "settings") loadSettings();
+
 }
 
 async function addHistory(type, detail) {
@@ -363,14 +437,23 @@ async function startCamera() {
   }
 }
 
-function assistantReply(question) {
+async function assistantReply(question) {
   const q = question.toLowerCase();
 
   if (/\b(hi|hello|hey)\b/.test(q))
     return "Hello! 😊 Welcome back. What would you like to know today?";
 
-  if (q.includes("weather") || q.includes("temperature"))
-    return "Open the Weather page to see the weather module. Connect a weather API to display live temperature, humidity and forecast.";
+  if (q.includes("weather") || q.includes("temperature")) {
+    if (!latestWeather) {
+        await loadWeather();
+    }
+
+    if (latestWeather) {
+        return `The weather in ${latestWeather.city} is ${latestWeather.temperature}°C with ${latestWeather.condition}. Humidity is ${latestWeather.humidity}% and wind speed is ${(latestWeather.windSpeed * 3.6).toFixed(1)} km/h.`;
+    }
+
+    return "Sorry, I cannot fetch the weather right now.";
+}
 
   if (q.includes("schedule") || q.includes("plan my day"))
     return "You can organize your day in My Schedule. Add events with a date, time and description, and they will appear on your dashboard.";
@@ -396,7 +479,7 @@ function assistantReply(question) {
   return "That is an interesting question! This starter version uses sample responses. Connect an AI model API through a secure backend to answer open-ended questions.";
 }
 
-function sendMessage(question) {
+async function sendMessage(question) {
   if (!question.trim()) return;
 
   const box = $("chat-messages");
@@ -408,7 +491,7 @@ function sendMessage(question) {
 
   const answer = document.createElement("div");
   answer.className = "bubble bot";
-  answer.textContent = assistantReply(question);
+  answer.textContent = await assistantReply(question);
   box.appendChild(answer);
 
   box.scrollTop = box.scrollHeight;
