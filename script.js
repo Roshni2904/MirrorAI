@@ -160,8 +160,8 @@ async function loadCloudData() {
 
     historyItems = historyItems.slice(0, 100);
     chatCount = historyItems.filter(
-      x => x.type === "AI question"
-    ).length;
+    x => x.type === "AI conversation" || x.type === "AI question"
+).length;
 
     renderAll();
     renderReminders();
@@ -483,25 +483,33 @@ async function assistantReply(question) {
 }
 
 async function sendMessage(question) {
-  if (!question.trim()) return;
+    if (!question.trim()) return;
 
-  const box = $("chat-messages");
+    const box = $("chat-messages");
 
-  const userBubble = document.createElement("div");
-  userBubble.className = "bubble user";
-  userBubble.textContent = question;
-  box.appendChild(userBubble);
+    const userBubble = document.createElement("div");
+    userBubble.className = "bubble user";
+    userBubble.textContent = question;
+    box.appendChild(userBubble);
 
-  const answer = document.createElement("div");
-  answer.className = "bubble bot";
-  answer.textContent = await assistantReply(question);
-  box.appendChild(answer);
+    const answerText = await assistantReply(question);
 
-  box.scrollTop = box.scrollHeight;
+    const answer = document.createElement("div");
+    answer.className = "bubble bot";
+    answer.textContent = answerText;
+    box.appendChild(answer);
 
-  chatCount++;
-  addHistory("AI question", question);
-  renderStats();
+    box.scrollTop = box.scrollHeight;
+
+    chatCount++;
+
+    // Save both question and assistant response
+    await addHistory(
+        "AI conversation",
+        `You: ${question}\nMirrorAI: ${answerText}`
+    );
+
+    renderStats();
 }
 
 // AUTH BUTTONS
