@@ -71,6 +71,7 @@ function startWeatherRefresh() {
 
 let latestWeather = null;
 let weatherRefreshTimer = null;
+let cameraStream = null;
 
 const $ = (id) => document.getElementById(id);
 
@@ -224,19 +225,27 @@ function openApp(data) {
 }
 
 function logout() {
-  saveData();
-  stopCamera();
+    localStorage.removeItem("token");
 
-  localStorage.removeItem("token");
-  currentUser = null;
+    currentUser = null;
 
-  $("app").classList.add("hidden");
-  $("auth-screen").classList.remove("hidden");
-  $("login-password").value = "";
+    if (weatherRefreshTimer) {
+        clearInterval(weatherRefreshTimer);
+        weatherRefreshTimer = null;
+    }
 
-  switchAuth("login");
+    try {
+        stopCamera();
+    } catch (error) {
+        console.log("Camera already stopped.");
+    }
+
+    $("app").classList.add("hidden");
+    $("auth-screen").classList.remove("hidden");
+    $("login-password").value = "";
+
+    switchAuth("login");
 }
-
 function navigate(page) {
   if (page === "weather") {
     loadWeather();
@@ -405,13 +414,18 @@ function loadSettings() {
 }
 
 function stopCamera() {
-  if (cameraStream) {
-    cameraStream.getTracks().forEach(track => track.stop());
-  }
+    if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        cameraStream = null;
+    }
 
-  cameraStream = null;
-  $("camera-video").srcObject = null;
-  $("camera-status").textContent = "Camera is off.";
+    if ($("camera-video")) {
+        $("camera-video").srcObject = null;
+    }
+
+    if ($("camera-status")) {
+        $("camera-status").textContent = "Camera is off.";
+    }
 }
 
 async function startCamera() {
