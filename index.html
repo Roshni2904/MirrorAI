@@ -121,42 +121,24 @@
         <section class="page" id="page-weather">
           <div class="page-heading"><div><small>LIVE INFORMATION</small><h1>Weather Dashboard ☀</h1><p>Local weather information.</p></div></div>
           <article class="panel weather-panel">
-            <div class="weather-location">
-    <div>
-        <h2 id="weather-city">Nagpur, Maharashtra</h2>
-        <p>Live weather information</p>
-    </div>
-    <span class="status-pill">Live</span>
-</div>
 
-<div class="weather-main large">
-    <span id="weather-icon">🌤️</span>
-    <div>
-        <strong id="weather-temperature">Loading...</strong>
-        <p id="weather-condition">Fetching weather...</p>
-    </div>
-</div>
-
-<div class="weather-metrics">
-    <div>
-        <small>HUMIDITY</small>
-        <b id="weather-humidity">--%</b>
+    <div class="panel-title">
+        <h3>☀ Weather Overview</h3>
+        <button class="text-button" data-goto="weather">
+            View details →
+        </button>
     </div>
 
-    <div>
-        <small>WIND</small>
-        <b id="weather-wind">-- km/h</b>
+    <div class="weather-main">
+        <span id="dashboard-weather-icon">🌤️</span>
+
+        <div>
+            <strong id="dashboard-temperature">Loading...</strong>
+            <p id="dashboard-condition">Fetching weather...</p>
+            <small id="dashboard-city">Nagpur, Maharashtra</small>
+        </div>
     </div>
 
-    <div>
-        <small>FORECAST</small>
-        <b id="weather-forecast">--</b>
-    </div>
-</div>
-
-<p id="weather-updated" class="help-text">
-    Updating weather...
-</p>
           </article>
         </section>
 

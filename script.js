@@ -197,27 +197,30 @@ function switchAuth(mode) {
 }
 
 function openApp(data) {
-  currentUser = data.user;
+    currentUser = data.user;
 
-  const saved = readData();
-  settings = {
-    greeting: true,
-    history: true,
-    sound: false,
-    ...(saved[currentUser.email]?.settings || {})
+    const saved = readData();
+
+    settings = {
+        greeting: true,
+        history: true,
+        sound: false,
+        ...(saved[currentUser.email]?.settings || {})
+    };
+
+    // Start live weather after login
     startWeatherRefresh();
-  };
 
-  events = [];
-  historyItems = [];
-  chatCount = 0;
-  reminders = [];
+    events = [];
+    historyItems = [];
+    chatCount = 0;
+    reminders = [];
 
-  $("auth-screen").classList.add("hidden");
-  $("app").classList.remove("hidden");
+    $("auth-screen").classList.add("hidden");
+    $("app").classList.remove("hidden");
 
-  renderAll();
-  navigate("dashboard");
+    renderAll();
+    navigate("dashboard");
 }
 
 function logout() {
