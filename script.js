@@ -848,8 +848,55 @@ $("save-settings").addEventListener("click", () => {
 
 // CAMERA
 
+// CAMERA AND PHOTO CAPTURE
+
 $("camera-start").addEventListener("click", startCamera);
+
 $("camera-stop").addEventListener("click", stopCamera);
+
+$("capture-photo").addEventListener("click", () => {
+    if (!cameraStream || !cameraStream.active) {
+        showToast("Please start the camera first.");
+        return;
+    }
+
+    const video = $("camera-video");
+
+    if (!video.videoWidth || !video.videoHeight) {
+        showToast("Camera is not ready. Please wait.");
+        return;
+    }
+
+    const canvas = document.createElement("canvas");
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    const context = canvas.getContext("2d");
+
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    canvas.toBlob(blob => {
+        if (!blob) {
+            showToast("Could not capture photo.");
+            return;
+        }
+
+        const photoURL = URL.createObjectURL(blob);
+
+        const img = document.createElement("img");
+        img.src = photoURL;
+        img.alt = "Captured photo";
+
+        $("photo-gallery").appendChild(img);
+
+        navigate("photos");
+
+        addHistory("Photo captured", "A photo was taken using the camera");
+
+        showToast("Photo captured successfully!");
+    }, "image/jpeg", 0.9);
+});
 
 // PHOTO GALLERY
 

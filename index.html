@@ -46,7 +46,9 @@
   <div id="app" class="app hidden">
     <header class="topbar">
       <div class="brand-small"><span>🪞</span> Mirror<span>AI</span></div>
-      <div class="top-actions"><span id="top-user"></span><button id="logout-btn" class="outline-btn">Logout ↗</button></div>
+      <div class="top-actions"><span id="top-user"></span><button type="button" id="logout-btn" class="outline-btn" onclick="logout()">
+    Logout ↗
+</button>
     </header>
     <div class="layout">
       <aside class="sidebar">
@@ -243,7 +245,19 @@
           <div class="page-heading"><div><small>SMART MIRROR DEVICE</small><h1>Live Mirror Camera 📷</h1><p>Preview your computer or phone camera.</p></div></div>
           <article class="panel camera-panel">
             <video id="camera-video" autoplay playsinline muted></video>
-            <div class="quick-actions"><button id="camera-start" class="primary" type="button">Start Camera</button><button id="camera-stop" class="outline-btn" type="button">Stop Camera</button></div>
+            <div class="quick-actions">
+    <button id="camera-start" class="primary" type="button">
+        Start Camera
+    </button>
+
+    <button id="capture-photo" class="primary" type="button">
+        📸 Capture Photo
+    </button>
+
+    <button id="camera-stop" class="outline-btn" type="button">
+        Stop Camera
+    </button>
+</div>
             <p id="camera-status" class="help-text">Camera is off. Allow camera permission when your browser asks.</p>
             <p class="help-text">This is a browser camera preview. Raspberry Pi camera integration requires a device connection and backend.</p>
           </article>
