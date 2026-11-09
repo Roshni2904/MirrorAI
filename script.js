@@ -161,8 +161,13 @@ async function loadPhotos() {
 
             const img = document.createElement("img");
             img.src = photo.imageUrl;
-            img.alt = "Saved photo";
+            img.alt = photo.personName || "Saved photo";
             img.loading = "lazy";
+
+            // Display person's name
+            const name = document.createElement("p");
+            name.className = "photo-name";
+            name.textContent = photo.personName || "Unknown";
 
             const deleteButton = document.createElement("button");
             deleteButton.type = "button";
@@ -171,7 +176,9 @@ async function loadPhotos() {
             deleteButton.dataset.photoDelete = photo._id;
 
             card.appendChild(img);
+            card.appendChild(name);
             card.appendChild(deleteButton);
+
             gallery.appendChild(card);
         });
 
