@@ -454,9 +454,10 @@ app.post("/api/photos", auth, upload.single("photo"), async (req, res) => {
         const result = await uploadToCloudinary(req.file.buffer);
 
         const photo = await Photo.create({
-            userId: req.user.id,
-            imageUrl: result.secure_url,
-            publicId: result.public_id
+        userId: req.user.id,
+        imageUrl: result.secure_url,
+        publicId: result.public_id,
+        personName: req.body.personName || "Unknown"
         });
 
         res.status(201).json({
