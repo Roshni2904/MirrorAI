@@ -524,20 +524,27 @@ app.delete("/api/photos/:id", auth, async (req, res) => {
     }
 });
 
+
 // LIVE WEATHER API
 app.get("/api/weather", async (req, res) => {
     try {
         const city = req.query.city || "Nagpur";
-
         const apiKey = process.env.OPENWEATHER_API_KEY;
 
+        if (!apiKey) {
+            return res.status(503).json({
+                message: "Weather API is not configured."
+            });
+        }
+
         const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent`
+            `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}&units=metric`
         );
 
         const data = await response.json();
 
         if (!response.ok) {
+            console.error("Weather API error:", data.message);
             return res.status(response.status).json({
                 message: data.message || "Weather API error"
             });
@@ -553,11 +560,13 @@ app.get("/api/weather", async (req, res) => {
 
     } catch (error) {
         console.error("Weather error:", error);
+
         res.status(500).json({
             message: "Unable to fetch weather"
         });
     }
 });
+
 
 
 // MIRRORAI AI CHAT API
@@ -585,7 +594,7 @@ app.post("/api/assistant/chat", auth, async (req, res) => {
         }
 
         const response = await fetch(
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent",
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent",
             {
                 method: "POST",
                 headers: {
