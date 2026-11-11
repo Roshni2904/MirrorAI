@@ -532,7 +532,7 @@ app.get("/api/weather", async (req, res) => {
         const apiKey = process.env.OPENWEATHER_API_KEY;
 
         const response = await fetch(
-            `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}&units=metric`
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent`
         );
 
         const data = await response.json();
