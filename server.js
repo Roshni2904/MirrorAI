@@ -559,6 +559,85 @@ app.get("/api/weather", async (req, res) => {
     }
 });
 
+
+// MIRRORAI AI CHAT API
+app.post("/api/assistant/chat", auth, async (req, res) => {
+    try {
+        const { message } = req.body;
+
+        if (!message || typeof message !== "string" || !message.trim()) {
+            return res.status(400).json({
+                message: "Please provide a question."
+            });
+        }
+
+        if (message.length > 1000) {
+            return res.status(400).json({
+                message: "Your message is too long."
+            });
+        }
+
+        if (!process.env.OPENAI_API_KEY) {
+            return res.status(503).json({
+                message: "AI service is not configured."
+            });
+        }
+
+        const response = await fetch(
+            "https://api.openai.com/v1/responses",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
+                },
+                body: JSON.stringify({
+                    model: "gpt-5.4-mini",
+                    instructions:
+                        "You are MirrorAI, a friendly female voice assistant. " +
+                        "Answer in simple English. Keep answers short and natural, " +
+                        "usually 2 to 4 sentences, because your answers will be spoken aloud.",
+                    input: message.trim(),
+                    max_output_tokens: 220,
+                    store: false
+                })
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            console.error("OpenAI API error:", data.error?.message);
+            return res.status(502).json({
+                message: "AI could not generate an answer."
+            });
+        }
+
+        const answer = (data.output || [])
+            .filter(item => item.type === "message")
+            .flatMap(item => item.content || [])
+            .filter(item => item.type === "output_text")
+            .map(item => item.text)
+            .join("\n")
+            .trim();
+
+        if (!answer) {
+            return res.status(502).json({
+                message: "AI returned an empty answer."
+            });
+        }
+
+        res.json({ answer });
+
+    } catch (error) {
+        console.error("AI assistant error:", error);
+
+        res.status(500).json({
+            message: "Unable to process your question."
+        });
+    }
+});
+
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
