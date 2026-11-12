@@ -597,6 +597,7 @@ app.post("/api/assistant/chat", auth, async (req, res) => {
             "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent",
             {
                 method: "POST",
+                signal: AbortSignal.timeout(25000),
                 headers: {
                     "Content-Type": "application/json",
                     "x-goog-api-key": process.env.GEMINI_API_KEY
@@ -619,7 +620,10 @@ app.post("/api/assistant/chat", auth, async (req, res) => {
                         }]
                     }],
                     generationConfig: {
-                        maxOutputTokens: 220
+                        maxOutputTokens: 120,
+                        thinkingConfig: {
+                            thinkingLevel: "MINIMAL"
+                        }
                     }
                 })
             }
